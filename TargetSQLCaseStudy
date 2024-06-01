@@ -23,11 +23,118 @@ Analysis of the above results:
 -There is an increasing trend of orders from the month Jan ,2017 and the trend continues till August, 2018. 
 -The peak season in 2017 is from Aug to November then a decreasing trend in December
 -In 2018, increasing trend starts from January and Continues till July. 
- Q3.1 Get month on month orders by region, states
+ 4.Get month on month orders by region, states
   select customer_city,customer_state, Year, Month, monthovermonthorders from (
   select c.customer_city, c.customer_state,EXTRACT(YEAR FROM order_purchase_timestamp) as Year, EXTRACT(Month FROM order_purchase_timestamp) as Month ,count(order_id) as monthovermonthorders from `bigquery-sandbox-368210.Target.orders` o inner join 
   `bigquery-sandbox-368210.Target.customers` c on 
    o.customer_id=c.customer_id
    where o.order_status='delivered'
 group by c.customer_city,c.customer_state,EXTRACT(YEAR FROM order_purchase_timestamp), EXTRACT(Month FROM order_purchase_timestamp) )
-order by customer_city,customer_state, Year, Month; 
+order by customer_city,customer_state, Year, Month; Get % increase in cost of orders from 2017 to 2018 (include months between Jan to Aug only)
+6.Calculate days between purchasing, delivering and estimated delivery
+  SELECT o.order_id,c.customer_id,o.order_purchase_timestamp,o.order_delivered_customer_date,o.order_estimated_delivery_date,
+  DATE_DIFF(o.order_delivered_customer_date,o.order_purchase_timestamp,DAY) as oorderminusdelivery,
+  DATE_DIFF(o.order_estimated_delivery_date,o.order_purchase_timestamp,DAY) as oorderminusestimatesdelivery
+  FROM `bigquery-sandbox-368210.Target.orders` o
+  inner join `bigquery-sandbox-368210.Target.customers` c on 
+  o.customer_id=c.customer_id
+ where order_status='delivered';
+
+7.Create columns:  for time_to_delivery and diff_estimated_delivery
+SELECT o.order_id,c.customer_id,c.customer_state,o.order_purchase_timestamp,o.order_delivered_customer_date,o.order_estimated_delivery_date,
+DATE_DIFF(o.order_delivered_customer_date,o.order_purchase_timestamp,DAY) as oorderminusdelivery,
+DATE_DIFF(o.order_estimated_delivery_date,o.order_purchase_timestamp,DAY) as oorderminusestimatesdelivery
+FROM `bigquery-sandbox-368210.Target.orders` o
+inner join `bigquery-sandbox-368210.Target.customers` c on 
+o.customer_id=c.customer_id
+ where order_status='delivered';
+8. Top 5 states with highest freight value - sort in desc limit 5
+             SELECT c.customer_state,round(avg(oi.freight_value)) as mean_freight_value_by_states,
+      round(avg(DATE_DIFF(o.order_delivered_customer_date,o.order_purchase_timestamp,DAY))) as mean_timetodelivery,
+      round(avg(DATE_DIFF(o.order_estimated_delivery_date,o.order_purchase_timestamp,DAY))) as mean_diff_estimated_delivery
+      FROM `bigquery-sandbox-368210.Target.orders` o
+      inner join `bigquery-sandbox-368210.Target.customers` c on 
+      o.customer_id=c.customer_id
+      inner join `bigquery-sandbox-368210.Target.order_items` oi on 
+      o.order_id=o.order_id
+      where order_status='delivered'
+      group by c.customer_state
+      order by round(avg(oi.freight_value)) desc
+      LIMIT 5 ; 
+ 9. Top 5 states with lowest freight value - sort in asc limit 5
+             SELECT c.customer_state,round(avg(oi.freight_value)) as mean_freight_value_by_states,
+      round(avg(DATE_DIFF(o.order_delivered_customer_date,o.order_purchase_timestamp,DAY))) as mean_timetodelivery,
+      round(avg(DATE_DIFF(o.order_estimated_delivery_date,o.order_purchase_timestamp,DAY))) as mean_diff_estimated_delivery
+      FROM `bigquery-sandbox-368210.Target.orders` o
+      inner join `bigquery-sandbox-368210.Target.customers` c on 
+      o.customer_id=c.customer_id
+      inner join `bigquery-sandbox-368210.Target.order_items` oi on 
+      o.order_id=o.order_id
+      where order_status='delivered'
+      group by c.customer_state
+      order by round(avg(oi.freight_value)) 
+      LIMIT 5 ; 
+  10.  Top 5 states with highest freight value - sort in desc limit 5
+             SELECT c.customer_state,round(avg(oi.freight_value)) as mean_freight_value_by_states,
+      round(avg(DATE_DIFF(o.order_delivered_customer_date,o.order_purchase_timestamp,DAY))) as mean_timetodelivery,
+      round(avg(DATE_DIFF(o.order_estimated_delivery_date,o.order_purchase_timestamp,DAY))) as mean_diff_estimated_delivery
+      FROM `bigquery-sandbox-368210.Target.orders` o
+      inner join `bigquery-sandbox-368210.Target.customers` c on 
+      o.customer_id=c.customer_id
+      inner join `bigquery-sandbox-368210.Target.order_items` oi on 
+      o.order_id=o.order_id
+      where order_status='delivered'
+      group by c.customer_state
+      order by round(avg(oi.freight_value)) desc
+      LIMIT 5 ; 
+     11. Top 5 states with lowest freight value - sort in asc limit 5
+             SELECT c.customer_state,round(avg(oi.freight_value)) as mean_freight_value_by_states,
+      round(avg(DATE_DIFF(o.order_delivered_customer_date,o.order_purchase_timestamp,DAY))) as mean_timetodelivery,
+      round(avg(DATE_DIFF(o.order_estimated_delivery_date,o.order_purchase_timestamp,DAY))) as mean_diff_estimated_delivery
+      FROM `bigquery-sandbox-368210.Target.orders` o
+      inner join `bigquery-sandbox-368210.Target.customers` c on 
+      o.customer_id=c.customer_id
+      inner join `bigquery-sandbox-368210.Target.order_items` oi on 
+      o.order_id=o.order_id
+      where order_status='delivered'
+      group by c.customer_state
+      order by round(avg(oi.freight_value)) 
+      LIMIT 5 ; 
+ 12. Top 5 states with highest/lowest average time to delivery
+      SELECT c.customer_state,round(avg(oi.freight_value)) as mean_freight_value_by_states,
+      round(avg(DATE_DIFF(o.order_delivered_customer_date,o.order_purchase_timestamp,DAY))) as mean_timetodelivery,
+      round(avg(DATE_DIFF(o.order_estimated_delivery_date,o.order_purchase_timestamp,DAY))) as mean_diff_estimated_delivery
+      FROM `bigquery-sandbox-368210.Target.orders` o
+      inner join `bigquery-sandbox-368210.Target.customers` c on 
+      o.customer_id=c.customer_id
+      inner join `bigquery-sandbox-368210.Target.order_items` oi on 
+      o.order_id=o.order_id
+      where order_status='delivered'
+      group by c.customer_state
+      order by round(avg(DATE_DIFF(o.order_delivered_customer_date,o.order_purchase_timestamp,DAY)))DESC
+      LIMIT 5 ;
+13.       SELECT c.customer_state,round(avg(oi.freight_value)) as mean_freight_value_by_states,
+      round(avg(DATE_DIFF(o.order_delivered_customer_date,o.order_purchase_timestamp,DAY))) as mean_timetodelivery,
+      round(avg(DATE_DIFF(o.order_estimated_delivery_date,o.order_purchase_timestamp,DAY))) as mean_diff_estimated_delivery
+      FROM `bigquery-sandbox-368210.Target.orders` o
+      inner join `bigquery-sandbox-368210.Target.customers` c on 
+      o.customer_id=c.customer_id
+      inner join `bigquery-sandbox-368210.Target.order_items` oi on 
+      o.order_id=o.order_id
+      where order_status='delivered'
+      group by c.customer_state
+      order by round(avg(DATE_DIFF(o.order_delivered_customer_date,o.order_purchase_timestamp,DAY)))
+      LIMIT 5 ; 
+14.         ----Payment type analysis--------:
+           -----Month over Month count of orders for different payment types-----
+           select EXTRACT( YEAR FROM order_delivered_customer_date) as year,EXTRACT( MONTH FROM order_delivered_customer_date)as Month,
+           payment_type,count(payment_type) as countofordermonthovermonth
+           from `bigquery-sandbox-368210.Target.orders` o inner join `bigquery-sandbox-368210.Target.payments` p 
+           on o.order_id=p.order_id
+           where o.order_status='delivered' and o.order_delivered_customer_date is not null
+           group by Year,Month,payment_type
+           order by Year, month; 
+           Distribution of payment installments and count of orders--------
+          select payment_installments, count(order_id) as countoforders from `bigquery-sandbox-368210.Target.payments`
+          group by payment_installments
+          order by payment_installments;
