@@ -1,0 +1,33 @@
+Target is a globally renowned brand and a prominent retailer in the United States. Target makes itself a preferred shopping destination by offering outstanding value, 
+inspiration, innovation and an exceptional guest experience that no other retailer can deliver.
+This particular business case focuses on the operations of Target in Brazil and provides insightful information about 100,000 orders placed between 2016 and 2018. 
+The dataset offers a comprehensive view of various dimensions including the order status, price, payment and freight performance, customer location, product attributes, and customer reviews.
+By analyzing this extensive dataset, it becomes possible to gain valuable insights into Target's operations in Brazil. 
+The information can shed light on various aspects of the business, such as order processing, pricing strategies, payment and shipping efficiency, 
+customer demographics, product characteristics, and customer satisfaction levels.
+
+1.SELECT min(order_purchase_timestamp) as min_date,max(order_purchase_timestamp) as max_date FROM `bigquery-sandbox-368210.Target.orders;
+2.Select count (distinct customer_city), count(distinct customer_state) from `bigquery-sandbox-368210.Target.customers`;
+3.Is there a growing trend on e-commerce in Brazil? How can we describe a complete scenario? Can we see some seasonality with peaks at specific months?
+select year, month, fp from (
+select extract( YEAR from order_purchase_timestamp) as year, extract( MONTH from order_purchase_timestamp) as month, round(sum(final_price)) as fp from (
+select order_id,customer_id,order_purchase_timestamp from `bigquery-sandbox-368210.Target.orders` 
+where order_status ='delivered') a 
+inner join  
+(select order_id, sum(price+freight_value) as final_price from `bigquery-sandbox-368210.Target.order_items`
+group by order_id) b 
+on a.order_id=b.order_id
+group by extract( YEAR from a.order_purchase_timestamp),extract( MONTH from a.order_purchase_timestamp))
+order by year, month;
+Analysis of the above results:
+-There is an increasing trend of orders from the month Jan ,2017 and the trend continues till August, 2018. 
+-The peak season in 2017 is from Aug to November then a decreasing trend in December
+-In 2018, increasing trend starts from January and Continues till July. 
+ Q3.1 Get month on month orders by region, states
+  select customer_city,customer_state, Year, Month, monthovermonthorders from (
+  select c.customer_city, c.customer_state,EXTRACT(YEAR FROM order_purchase_timestamp) as Year, EXTRACT(Month FROM order_purchase_timestamp) as Month ,count(order_id) as monthovermonthorders from `bigquery-sandbox-368210.Target.orders` o inner join 
+  `bigquery-sandbox-368210.Target.customers` c on 
+   o.customer_id=c.customer_id
+   where o.order_status='delivered'
+group by c.customer_city,c.customer_state,EXTRACT(YEAR FROM order_purchase_timestamp), EXTRACT(Month FROM order_purchase_timestamp) )
+order by customer_city,customer_state, Year, Month; 
